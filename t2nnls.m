@@ -7,6 +7,7 @@ function [T2Spectra, k, sfit] = t2nnls(signal, te, doPlot, T2Range, ...
 % this implementation written by Galen Reed, 01/07/2019
 
 
+
 T2 = logspace(log10(T2Range(1)), log10(T2Range(2)), NT2Samples);
 
 T2DecayMatrix = exp( -te(:) * (1./T2(:).') );
@@ -49,19 +50,26 @@ end
 
 
 sfit = T2DecayMatrix*k;
-T2Spectra = k/sum(k);
+T2Spectra = k;
 
 if(doPlot == 1)
 
+    fontsize = 20;
     figure();
     subplot(2, 1, 1)
-    semilogy(te, sfit, '--', te, signal, 'x')
+    semilogy(te, sfit, '-', te, signal, 'x');
+    grid on;
     xlim([0 te(end)]);
+    xlabel('TE [ms]', 'fontsize', fontsize);
+    ylabel('signal', 'fontsize', fontsize);
+    
     
     subplot(2, 1, 2);
     semilogx(T2, T2Spectra)
+    grid on;
     xlim([T2(1) T2(end)]);
-    
+    xlabel('T_2 [ms]', 'fontsize', fontsize);
+    ylabel('signal', 'fontsize', fontsize);
 end
 
 
