@@ -1,5 +1,5 @@
 function [T2Spectra, k, sfit] = t2nnls(signal, te, doPlot, T2Range, ...
-                                       NT2Samples, regularization)
+                                       NT2Samples, regularizationType, regularizationLambda)
 %
 % T2 non-negative least squares algorithm for NMR relaxation  
 % based on the reference: 
@@ -16,33 +16,22 @@ T2DecayMatrix = exp( -te(:) * (1./T2(:).') );
 %disp(cnum);
 
 
-if (regularization == 1)% not tested in forever
 
-    lambdamax = find_lambdamax_l1_ls_nonneg(T2DecayMatrix', s);
-    lambda = .001 * lambdamax;
+lambda = regularizationLambda;
+
+if (regularizationType == 1)% not tested in forever
+  
     [k,status] = l1_ls_nonneg(T2DecayMatrix, signal, lambda, rel_tol,quiet);
 
-elseif(regularization == 2)% broken
+elseif(regularizationType == 2)% works great
+   
+    lambdaDiag = lambda * eye(NT2Samples);
+    zeroPad = zeros([NT2Samples 1]);
+    Acat = vertcat(T2DecayMatrix, lambdaDiag);
+    ycat = vertcat(signal, zeroPad);
+    k = lsqnonneg(Acat, ycat);    
     
-    lambdamax = norm(2*(T2DecayMatrix'*signal), 2);
-    lambda = 5e-5* lambdamax;
- 
-    li = lambda * eye(NT2Samples);
-    zp = zeros([NT2Samples 1]);
-    size(li)
-    size(NT2Samples)
-    
-    Acat = vertcat(NT2Samples, li);
-    
-    ycat = vertcat(s, zp);
-
-    
-  
-    k = lsqnonneg(Acat, ycat);
-    k = k(1:NT2);
-    
-    
-elseif(regularization == 0) % works great
+elseif(regularizationType == 0) % works great
     
     k = lsqnonneg(T2DecayMatrix, signal);
      
@@ -55,20 +44,20 @@ T2Spectra = k;
 if(doPlot == 1)
 
     fontsize = 20;
+
     figure();
-    subplot(2, 1, 1)
     semilogy(te, sfit, '-', te, signal, 'x');
     grid on;
     xlim([0 te(end)]);
-    xlabel('TE [ms]', 'fontsize', fontsize);
+    xlabel('TE [s]', 'fontsize', fontsize);
     ylabel('signal', 'fontsize', fontsize);
     
     
-    subplot(2, 1, 2);
+    figure();
     semilogx(T2, T2Spectra)
     grid on;
     xlim([T2(1) T2(end)]);
-    xlabel('T_2 [ms]', 'fontsize', fontsize);
+    xlabel('T_2 [s]', 'fontsize', fontsize);
     ylabel('signal', 'fontsize', fontsize);
 end
 
